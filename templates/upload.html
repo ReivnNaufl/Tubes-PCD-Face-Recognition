@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Face Similarity{% endblock %}
+{% block content %}
+  <div class="container mt-4">
+    <h2>Upload Image</h2>
+    <form action="/similarity/" method="post" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="file1" class="form-label">Upload Foto Pertama:</label>
+        <input type="file" class="form-control" id="file1" name="file1" accept="image/*" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="file2" class="form-label">Upload Foto Kedua:</label>
+        <input type="file" class="form-control" id="file2" name="file2" accept="image/*" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Process</button>
+    </form>
+
+    {% if similarity_score is defined %}
+      <div class="alert alert-info mt-4">
+        <p><strong>Similarity Score:</strong> {{ similarity_score | round(4) }}</p>
+        <p>
+          {% if similarity_score > 0.7 %}
+            ✅ <strong>Kemungkinan Orang nya sama</strong>
+          {% else %}
+            ❌ <strong>Kemungkinan Orang nya berbeda</strong>
+          {% endif %}
+        </p>
+      </div>
+      <div class="row mt-3">
+        <div class="col-md-6">
+          <img src="{{ image1_url }}" class="img-fluid" alt="Foto Pertama">
+        </div>
+        <div class="col-md-6">
+          <img src="{{ image2_url }}" class="img-fluid" alt="Foto Kedua">
+        </div>
+      </div>      
+    {% endif %}
+  </div>
+{% endblock %}

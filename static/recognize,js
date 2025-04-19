@@ -1,0 +1,38 @@
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+async function setupCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    return new Promise((resolve) => {
+        video.onloadedmetadata = () => resolve(video);
+    });
+}
+
+async function sendFrame() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'frame.jpg');
+
+        const res = await fetch('http://localhost:8000/recognize/', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        const imageBytes = new Uint8Array(data.image.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+        const blob = new Blob([imageBytes], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
+
+        video.src = url;  // Replace video with processed image (or overlay separately)
+    }, 'image/jpeg');
+}
+
+setupCamera().then(() => {
+    setInterval(sendFrame, 1000);  // every 1s
+});
