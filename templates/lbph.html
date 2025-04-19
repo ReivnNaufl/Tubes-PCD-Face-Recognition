@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}LBPH Face Recognition{% endblock %}
+{% block content %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Face Recognition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        #video-container {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+        }
+        #video {
+            background: #000;
+            width: 640px;
+            height: 480px;
+            display: block;
+            border: 3px solid #333;
+            border-radius: 5px;
+        }
+        .face-box {
+            position: absolute;
+            border: 2px solid;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .face-label {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 5px;
+            font-size: 14px;
+            text-align: left;
+        }
+        .recognized {
+            border-color: #00FF00;
+        }
+        .unknown {
+            border-color: #FF0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live LBPH Face Recognition</h1>
+    <div id="video-container">
+        <img id="video" src="" alt="Live Feed">
+    </div>
+    
+    <script>
+        const videoContainer = document.getElementById('video-container');
+        const videoElement = document.getElementById('video');
+        const ws = new WebSocket(`ws://${window.location.host}/lbph/ws`);
+        
+        ws.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+            const frameBytes = new Uint8Array(data.frame.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+            const blob = new Blob([frameBytes], { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
+            
+            videoElement.src = url;
+            
+            // Clear previous face boxes
+            document.querySelectorAll('.face-box').forEach(el => el.remove());
+            
+            // Draw new face boxes
+            data.results.forEach(face => {
+                const box = document.createElement('div');
+                box.className = `face-box ${face.recognized ? 'recognized' : 'unknown'}`;
+                box.style.left = `${face.x}px`;
+                box.style.top = `${face.y}px`;
+                box.style.width = `${face.w}px`;
+                box.style.height = `${face.h}px`;
+                
+                const label = document.createElement('div');
+                label.className = 'face-label';
+                
+                if (face.recognized) {
+                    label.textContent = `${face.ethnicity} (${face.emotion}) - ${face.confidence.toFixed(1)}`;
+                } else {
+                    label.textContent = `Unknown (${face.confidence.toFixed(1)})`;
+                }
+                
+                box.appendChild(label);
+                videoContainer.appendChild(box);
+            });
+        };
+        
+        ws.onclose = () => {
+            console.log('WebSocket disconnected');
+        };
+        
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    </script>
+</body>
+</html>
+
+
+{% endblock %}
