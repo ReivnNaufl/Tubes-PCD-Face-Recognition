@@ -35,14 +35,21 @@ class FaceRecognizer:
                     'emotion': parts[2]
                 }
     
-    def recognize_faces(self, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    def recognize_faces(self, gray_frame):
+        """Accepts either BGR or grayscale frame"""
+        # Convert to grayscale if needed
+        if len(gray_frame.shape) == 3:  # BGR image
+            gray = cv2.cvtColor(gray_frame, cv2.COLOR_BGR2GRAY)
+        else:  # Already grayscale
+            gray = gray_frame
+            
         faces = self.face_cascade.detectMultiScale(
             gray,
             scaleFactor=1.1,
             minNeighbors=5,
             minSize=(100, 100)
         )
+        
         recognition_results = []
         
         for (x, y, w, h) in faces:

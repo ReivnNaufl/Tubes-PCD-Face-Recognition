@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from websocket import WebSocketManager
+import asyncio
 
 app = FastAPI()
 ws_manager = WebSocketManager()
@@ -18,10 +19,26 @@ async def index(request: Request):
 async def index(request: Request):
     return templates.TemplateResponse("lbph.html", {"request": request})
 
+@app.get("/facenet")
+async def index(request: Request):
+    return templates.TemplateResponse("facenet.html", {"request": request})
+
 @app.websocket("/lbph/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await ws_manager.connect(websocket)
+async def lbph_websocket(websocket: WebSocket):
+    await ws_manager.connect(websocket, 'lbph')
     try:
-        await ws_manager.broadcast_frame(websocket)
+        while True:
+            # Just keep connection alive
+            await websocket.receive_text()
     except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
+        await ws_manager.disconnect(websocket, 'lbph')
+
+@app.websocket("/facenet/ws")
+async def facenet_websocket(websocket: WebSocket):
+    await ws_manager.connect(websocket, 'facenet')
+    try:
+        while True:
+            # Just keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await ws_manager.disconnect(websocket, 'facenet')
