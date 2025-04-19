@@ -3,3 +3,11 @@ uvicorn
 opencv-python
 jinja2
 python-multipart
+scikit-learn
+facenet-pytorch
+numpy
+pillow
+torch 
+torchvision
+opencv-contrib-python
+"uvicorn[standard]"
